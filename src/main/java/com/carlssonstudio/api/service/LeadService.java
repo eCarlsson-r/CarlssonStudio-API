@@ -1,0 +1,125 @@
+package com.carlssonstudio.api.service;
+
+import com.carlssonstudio.api.dto.*;
+import com.carlssonstudio.api.entity.*;
+import com.carlssonstudio.api.recommendation.*;
+import com.carlssonstudio.api.repository.*;
+import lombok.RequiredArgsConstructor;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.stream.Collectors;
+
+@Service
+@RequiredArgsConstructor
+public class LeadService {
+
+    private final LeadRepository leadRepository;
+    private final LeadRecommendationRepository recommendationRepository;
+    private final RecommendationEngine recommendationEngine;
+
+    @Transactional
+    public LeadResponse submit(LeadRequest request) {
+        // Save lead
+        Lead lead = Lead.builder()
+                .name(request.getName())
+                .email(request.getEmail())
+                .company(request.getCompany())
+                .companySize(request.getCompanySize())
+                .industry(request.getIndustry())
+                .buildType(request.getBuildType())
+                .problems(request.getProblems())
+                .features(request.getFeatures())
+                .status(LeadStatus.NEW)
+                .build();
+
+        Lead saved = leadRepository.save(lead);
+
+        // Run recommendation engine
+        List<ScoringResult> results =
+            recommendationEngine.recommend(request);
+
+        // Persist recommendations
+        List<LeadRecommendation> recs = results.stream()
+                .map(r -> LeadRecommendation.builder()
+                        .lead(saved)
+                        .foundationSlug(r.getFoundation().getSlug())
+                        .matchScore(r.getScore())
+                        .matchReason(r.getReason())
+                        .build())
+                .collect(Collectors.toList());
+
+        recommendationRepository.saveAll(recs);
+        saved.setRecommendations(recs);
+
+        return mapToResponse(saved);
+    }
+
+    public List<LeadResponse> findAll() {
+        return leadRepository.findAll()
+                .stream()
+                .map(this::mapToResponse)
+                .collect(Collectors.toList());
+    }
+
+    public LeadResponse findById(Long id) {
+        Lead lead = leadRepository.findById(id)
+                .orElseThrow(() ->
+                    new RuntimeException("Lead not found: " + id));
+        return mapToResponse(lead);
+    }
+
+    @Transactional
+    public LeadResponse updateStatus(Long id, LeadStatus status) {
+        Lead lead = leadRepository.findById(id)
+                .orElseThrow(() ->
+                    new RuntimeException("Lead not found: " + id));
+        lead.setStatus(status);
+        return mapToResponse(leadRepository.save(lead));
+    }
+
+    private LeadResponse mapToResponse(Lead lead) {
+        List<RecommendationResponse> recs =
+            lead.getRecommendations() == null
+                ? List.of()
+                : lead.getRecommendations().stream()
+                        .map(r -> RecommendationResponse.builder()
+                                .foundationSlug(r.getFoundationSlug())
+                                .foundationName(
+                                    resolveFoundationName(
+                                        r.getFoundationSlug()))
+                                .matchScore(r.getMatchScore())
+                                .matchReason(r.getMatchReason())
+                                .build())
+                        .collect(Collectors.toList());
+
+        return LeadResponse.builder()
+                .id(lead.getId())
+                .name(lead.getName())
+                .email(lead.getEmail())
+                .company(lead.getCompany())
+                .companySize(lead.getCompanySize())
+                .industry(lead.getIndustry())
+                .buildType(lead.getBuildType())
+                .problems(lead.getProblems())
+                .features(lead.getFeatures())
+                .status(lead.getStatus().name())
+                .createdAt(lead.getCreatedAt())
+                .recommendations(recs)
+                .build();
+    }
+
+    private String resolveFoundationName(String slug) {
+        return switch (slug) {
+            case "commerce-system"  -> "CommerceSystem";
+            case "resto-system"     -> "RestoSystem";
+            case "urus-properti"    -> "UrusProperti";
+            case "insurance-portal" -> "InsurancePortal";
+            case "spa-system"       -> "SpaSystem";
+            case "payroll-agent"    -> "Payroll Agent";
+            case "human-design"     -> "HumanDesign";
+            case "quoteplot-agent"  -> "QuotePlot Agent";
+            default -> slug;
+        };
+    }
+}
