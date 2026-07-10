@@ -17,10 +17,10 @@ public class LeadService {
     private final LeadRepository leadRepository;
     private final LeadRecommendationRepository recommendationRepository;
     private final RecommendationEngine recommendationEngine;
+    private final NotificationService notificationService;
 
     @Transactional
     public LeadResponse submit(LeadRequest request) {
-        // Save lead
         Lead lead = Lead.builder()
                 .name(request.getName())
                 .email(request.getEmail())
@@ -35,11 +35,9 @@ public class LeadService {
 
         Lead saved = leadRepository.save(lead);
 
-        // Run recommendation engine
         List<ScoringResult> results =
             recommendationEngine.recommend(request);
 
-        // Persist recommendations
         List<LeadRecommendation> recs = results.stream()
                 .map(r -> LeadRecommendation.builder()
                         .lead(saved)
@@ -52,7 +50,12 @@ public class LeadService {
         recommendationRepository.saveAll(recs);
         saved.setRecommendations(recs);
 
-        return mapToResponse(saved);
+        LeadResponse response = mapToResponse(saved);
+
+        // Asynchronous — does not block the HTTP response
+        notificationService.sendLeadNotification(response);
+
+        return response;
     }
 
     public List<LeadResponse> findAll() {

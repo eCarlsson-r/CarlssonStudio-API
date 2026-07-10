@@ -11,8 +11,7 @@ import org.springframework.security.web.SecurityFilterChain;
 @Configuration
 @EnableWebSecurity
 public class SecurityConfig {
-
-    @Bean
+	@Bean
     public SecurityFilterChain filterChain(HttpSecurity http)
             throws Exception {
         http
@@ -20,7 +19,7 @@ public class SecurityConfig {
             .sessionManagement(session -> session
                 .sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                // Public endpoints
+                // Public end points
                 .requestMatchers(HttpMethod.POST, "/api/leads").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
