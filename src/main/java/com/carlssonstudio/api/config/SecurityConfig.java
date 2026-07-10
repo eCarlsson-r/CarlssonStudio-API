@@ -21,6 +21,7 @@ public class SecurityConfig {
             .authorizeHttpRequests(auth -> auth
                 // Public end points
                 .requestMatchers(HttpMethod.POST, "/api/leads").permitAll()
+                .requestMatchers(HttpMethod.GET, "/api/proposals/*/download").permitAll()
                 .requestMatchers("/actuator/health").permitAll()
                 .requestMatchers("/swagger-ui/**").permitAll()
                 .requestMatchers("/v3/api-docs/**").permitAll()

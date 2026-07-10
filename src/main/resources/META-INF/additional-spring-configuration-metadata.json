@@ -18,5 +18,15 @@
     "name": "app.mail.from-name",
     "type": "java.lang.String",
     "description": "A description for 'app.mail.from-name'"
+  },
+  {
+    "name": "app.proposals.storage-path",
+    "type": "java.lang.String",
+    "description": "A description for 'app.proposals.storage-path'"
+  },
+  {
+    "name": "spring.flyway.repair-on-migrate",
+    "type": "java.lang.String",
+    "description": "A description for 'spring.flyway.repair-on-migrate'"
   }
 ]}
