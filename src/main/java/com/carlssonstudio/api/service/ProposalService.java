@@ -18,6 +18,7 @@ public class ProposalService {
 
     private final ProposalRepository proposalRepository;
     private final LeadRepository leadRepository;
+    private final FoundationRepository foundationRepository;
     private final LeadRecommendationRepository recommendationRepository;
     private final ProposalPdfGenerator pdfGenerator;
     private final TimelineCalculator timelineCalculator;
@@ -138,16 +139,8 @@ public class ProposalService {
     }
 
     private String resolveFoundationName(String slug) {
-        return switch (slug) {
-            case "commerce-system"  -> "CommerceSystem";
-            case "resto-system"     -> "RestoSystem";
-            case "urus-properti"    -> "UrusProperti";
-            case "insurance-portal" -> "InsurancePortal";
-            case "spa-system"       -> "SpaSystem";
-            case "payroll-agent"    -> "Payroll Agent";
-            case "human-design"     -> "HumanDesign";
-            case "quoteplot-agent"  -> "QuotePlot Agent";
-            default -> slug;
-        };
+        return foundationRepository.findBySlug(slug)
+                .map(FoundationEntity::getName)
+                .orElse(slug);
     }
 }

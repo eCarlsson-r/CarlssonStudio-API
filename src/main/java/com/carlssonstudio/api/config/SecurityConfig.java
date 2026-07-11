@@ -60,6 +60,8 @@ public class SecurityConfig {
                     "/swagger-ui/**").permitAll()
                 .requestMatchers(
                     "/v3/api-docs/**").permitAll()
+                .requestMatchers(HttpMethod.GET,
+                	"/api/config/**").permitAll()
                 // Admin only
                 .requestMatchers("/api/admin/**")
                     .hasRole("SUPER_ADMIN")

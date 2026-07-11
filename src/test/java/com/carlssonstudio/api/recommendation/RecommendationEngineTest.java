@@ -1,6 +1,9 @@
 package com.carlssonstudio.api.recommendation;
 
 import com.carlssonstudio.api.dto.LeadRequest;
+import com.carlssonstudio.api.entity.FoundationEntity;
+import com.carlssonstudio.api.repository.FoundationRepository;
+
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import java.util.List;
@@ -10,11 +13,113 @@ import static org.junit.jupiter.api.Assertions.*;
 class RecommendationEngineTest {
 
     private RecommendationEngine engine;
+    
+    private List<FoundationEntity> testFoundations() {
+        return List.of(
+            FoundationEntity.builder()
+                .slug("resto-system")
+                .name("RestoSystem")
+                .industry("Restaurant")
+                .relatedIndustries(List.of("Restaurant", "Cafe",
+                    "Food & Beverage", "Catering"))
+                .buildTypes(List.of("POS", "Internal System", "Dashboard"))
+                .problems(List.of("Manual spreadsheets", "No reporting",
+                    "No inventory", "No booking", "Duplicate work",
+                    "No dashboard"))
+                .features(List.of("Authentication", "Roles", "Dashboard",
+                    "Reports", "Notifications", "AI", "Scheduling", "API"))
+                .active(true)
+                .build(),
+            FoundationEntity.builder()
+                .slug("commerce-system")
+                .name("CommerceSystem")
+                .industry("Retail")
+                .relatedIndustries(List.of("Retail", "E-Commerce", "Wholesale", "Fashion"))
+                .buildTypes(List.of("POS", "Internal System", "Customer Portal"))
+                .problems(List.of("Manual spreadsheets", "No inventory",
+                		"No reporting", "Duplicate work", "No dashboard"))
+                .features(List.of("Authentication", "Roles", "Payments", "Reports", 
+                		"Dashboard", "Invoices", "API", "Notifications"))
+                .active(true)
+                .build(),
+            FoundationEntity.builder()
+                .slug("urus-properti")
+                .name("UrusProperti")
+                .industry("Property")
+                .relatedIndustries(List.of("Property", "Real Estate", "Construction", "Leasing"))
+                .buildTypes(List.of("Internal System", "Customer Portal", "Dashboard"))
+                .problems(List.of("Manual spreadsheets", "No reporting", 
+                		"Duplicate work", "No dashboard", "WhatsApp chaos"))
+                .features(List.of("Authentication", "Roles", "Dashboard",
+                		"Reports", "Notifications", "AI", "API", "Invoices"))
+                .active(true)
+                .build(),
+            FoundationEntity.builder()
+                .slug("insurance-portal")
+                .name("InsurancePortal")
+                .industry("Insurance")
+                .relatedIndustries(List.of("Insurance", "Finance", "Banking", "Financial Services"))
+                .buildTypes(List.of("Internal System", "Customer Portal", "Dashboard"))
+                .problems(List.of("Manual spreadsheets", "No reporting", "Duplicate work",
+                		"No dashboard", "WhatsApp chaos"))
+                .features(List.of("Authentication", "Roles", "Dashboard", "Reports", 
+                		"AI", "API", "Notifications", "Mobile"))
+                .active(true)
+                .build(),
+            FoundationEntity.builder()
+                .slug("spa-system")
+                .name("SpaSystem")
+                .industry("Wellness")
+                .relatedIndustries(List.of("Wellness","Spa","Beauty","Healthcare","Fitness"))
+                .buildTypes(List.of("Booking","Internal System","Customer Portal"))
+                .problems(List.of("No booking", "Manual spreadsheets", 
+                		"No inventory","WhatsApp chaos", "No reporting"))
+                .features(List.of("Authentication", "Roles", "Scheduling", "Payments",
+                		"Notifications", "Reports", "Dashboard", "Mobile"))
+	            .active(true)
+	            .build(),
+	        FoundationEntity.builder()
+	            .slug("payroll-agent")
+	            .name("Payroll Agent")
+                .industry("HR & Payroll")
+	            .relatedIndustries(List.of("HR & Payroll","Manufacturing","Professional Services","Education","Healthcare"))
+	            .buildTypes(List.of("Internal System","ERP","Dashboard"))
+	            .problems(List.of("Manual spreadsheets", "No HR", 
+        		 "Duplicate work", "No reporting", "No dashboard"))
+                .features(List.of("Authentication","Roles","Reports","Dashboard","API","Notifications","AI","Invoices"))
+                .active(true)
+                .build(),
+            FoundationEntity.builder()
+                .slug("human-design")
+                .name("HumanDesign")
+                .industry("AI")
+                .relatedIndustries(List.of("AI","Professional Services","Consulting","Education","HR & Payroll"))
+                .buildTypes(List.of("AI Assistant","Customer Portal","Dashboard"))
+                .problems(List.of("No reporting", "No dashboard", "Duplicate work", "Manual spreadsheets"))
+                .features(List.of("Authentication","AI","API","Reports","Dashboard","Mobile"))
+                .active(true)
+                .build(),
+            FoundationEntity.builder()
+                .slug("quoteplot-agent")
+                .name("QuotePlot Agent")
+                .industry("AI")
+                .relatedIndustries(List.of("AI","Finance","Investment","Banking","Professional Services"))
+                .buildTypes(List.of("AI Assistant","Dashboard","Internal System"))
+                .problems(List.of("No reporting", "No dashboard",
+                		 "Manual spreadsheets", "Duplicate work"))
+                .features(List.of("Authentication","AI","API","Dashboard","Reports","Notifications"))
+                .active(true)
+                .build()
+        );
+    }
 
     @BeforeEach
     void setUp() {
-        engine = new RecommendationEngine(
-                new FoundationRegistry());
+    	FoundationRepository fakeRepo =
+    		    org.mockito.Mockito.mock(FoundationRepository.class);
+    		org.mockito.Mockito.when(fakeRepo.findByActiveTrue())
+    		    .thenReturn(testFoundations());
+    		engine = new RecommendationEngine(fakeRepo);
     }
 
     @Test

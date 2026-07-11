@@ -1,6 +1,9 @@
 package com.carlssonstudio.api.recommendation;
 
 import com.carlssonstudio.api.dto.LeadRequest;
+import com.carlssonstudio.api.entity.FoundationEntity;
+import com.carlssonstudio.api.repository.FoundationRepository;
+
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Component;
 
@@ -11,7 +14,7 @@ import java.util.stream.Collectors;
 @RequiredArgsConstructor
 public class RecommendationEngine {
 
-    private final FoundationRegistry registry;
+    private final FoundationRepository foundationRepository;
 
     // Weights — must sum to 100
     private static final int WEIGHT_INDUSTRY   = 40;
@@ -20,13 +23,28 @@ public class RecommendationEngine {
     private static final int WEIGHT_FEATURES   = 15;
 
     public List<ScoringResult> recommend(LeadRequest request) {
-        return registry.getAll()
+    	return foundationRepository.findByActiveTrue()
                 .stream()
+                .map(this::toFoundation)
                 .map(f -> score(f, request))
                 .sorted(Comparator
-                    .comparingInt(ScoringResult::getScore).reversed())
+                    .comparingInt(ScoringResult::getScore)
+                    .reversed())
                 .limit(3)
                 .collect(Collectors.toList());
+    }
+    
+    private Foundation toFoundation(FoundationEntity e) {
+        return Foundation.builder()
+                .slug(e.getSlug())
+                .name(e.getName())
+                .industry(e.getIndustry())
+                .relatedIndustries(e.getRelatedIndustries())
+                .buildTypes(e.getBuildTypes())
+                .problems(e.getProblems())
+                .features(e.getFeatures())
+                .description(e.getDescription())
+                .build();
     }
 
     private ScoringResult score(Foundation f, LeadRequest req) {
