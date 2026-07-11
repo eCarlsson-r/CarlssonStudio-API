@@ -5,9 +5,13 @@ import org.springframework.boot.autoconfigure.SpringBootApplication;
 import org.springframework.boot.context.properties.EnableConfigurationProperties;
 import org.springframework.scheduling.annotation.EnableAsync;
 import com.carlssonstudio.api.config.MailProperties;
+import com.carlssonstudio.api.config.JwtProperties;
 
 @SpringBootApplication
-@EnableConfigurationProperties(MailProperties.class)
+@EnableConfigurationProperties({
+    MailProperties.class,
+    JwtProperties.class
+})
 @EnableAsync
 public class CarlssonStudioApiApplication {
 
