@@ -5,175 +5,244 @@ import com.carlssonstudio.api.dto.RecommendationResponse;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
+/**
+ * Builds HTML emails matching the carlssonstudio.com brand:
+ * teal primary (#146C7C), burnt-sienna accent (#9A4D1F), serif headlines,
+ * and the nine-foundation ribbon. Layout is table-based with inline styles
+ * so it renders correctly in Gmail and Outlook (no flexbox, no external CSS).
+ */
 @Service
 public class EmailTemplateService {
 
+    /** One segment per foundation — mirrors ribbonAccents in the frontend. */
+    private static final String[] RIBBON = {
+        "#9A4D1F", "#94221F", "#1D64AD", "#1B7BB3", "#2B3A96",
+        "#147A5F", "#4A37A8", "#2F6E75", "#D4AF37"
+    };
+
+    private static final String SERIF = "Georgia, 'Times New Roman', serif";
+    private static final String SANS = "Arial, Helvetica, sans-serif";
+
+    private static final String TEAL = "#146C7C";
+    private static final String TEAL_DARK = "#0D4A45";
+    private static final String TEAL_TINT = "#E3F1F0";
+    private static final String SIENNA = "#9A4D1F";
+    private static final String INK = "#1A1C1C";
+    private static final String MUTED = "#5D6F73";
+    private static final String SURFACE = "#F7F9F9";
+    private static final String BORDER = "#E5E9E9";
+
     public String buildLeadNotificationHtml(LeadResponse lead) {
-        RecommendationResponse top = lead.getRecommendations()
-                .isEmpty() ? null : lead.getRecommendations().get(0);
+        RecommendationResponse top = lead.getRecommendations() == null
+                || lead.getRecommendations().isEmpty()
+                ? null : lead.getRecommendations().get(0);
+
+        String name = escape(lead.getName());
+        String email = escape(lead.getEmail());
 
         return """
             <!DOCTYPE html>
             <html>
             <head>
               <meta charset="UTF-8">
-              <style>
-                body { font-family: Arial, sans-serif; background: #f5f5f5;
-                       margin: 0; padding: 20px; }
-                .card { background: #ffffff; border-radius: 8px;
-                        max-width: 600px; margin: 0 auto;
-                        padding: 32px; border: 1px solid #e0e0e0; }
-                .header { border-bottom: 3px solid #6366f1;
-                          padding-bottom: 16px; margin-bottom: 24px; }
-                .header h1 { color: #1a1a2e; font-size: 22px; margin: 0; }
-                .header p { color: #666; margin: 4px 0 0; font-size: 14px; }
-                .badge { display: inline-block; background: #6366f1;
-                         color: white; padding: 4px 12px;
-                         border-radius: 20px; font-size: 12px;
-                         font-weight: bold; margin-bottom: 16px; }
-                .section { margin-bottom: 20px; }
-                .section h3 { color: #333; font-size: 13px;
-                              text-transform: uppercase;
-                              letter-spacing: 0.05em;
-                              margin: 0 0 8px; }
-                .field { display: flex; padding: 6px 0;
-                         border-bottom: 1px solid #f0f0f0; }
-                .field .label { color: #888; font-size: 13px;
-                                min-width: 140px; }
-                .field .value { color: #1a1a2e; font-size: 13px;
-                                font-weight: 500; }
-                .tag { display: inline-block; background: #f0f0f0;
-                       color: #444; padding: 3px 10px;
-                       border-radius: 12px; font-size: 12px;
-                       margin: 2px; }
-                .recommendation { background: #f0f0ff;
-                                  border: 1px solid #6366f1;
-                                  border-radius: 8px; padding: 16px;
-                                  margin-top: 8px; }
-                .rec-name { font-size: 18px; font-weight: bold;
-                            color: #6366f1; }
-                .rec-score { font-size: 28px; font-weight: bold;
-                             color: #1a1a2e; }
-                .rec-reason { color: #555; font-size: 13px;
-                              margin-top: 8px; line-height: 1.5; }
-                .footer { margin-top: 24px; padding-top: 16px;
-                          border-top: 1px solid #e0e0e0;
-                          text-align: center; color: #aaa;
-                          font-size: 12px; }
-                .cta { display: block; text-align: center;
-                       background: #6366f1; color: white;
-                       padding: 12px 24px; border-radius: 6px;
-                       text-decoration: none; font-weight: bold;
-                       margin: 20px 0; font-size: 14px; }
-              </style>
+              <meta name="viewport" content="width=device-width, initial-scale=1.0">
+              <title>New Lead — Carlsson Studio</title>
             </head>
-            <body>
-              <div class="card">
-                <div class="header">
-                  <h1>🔔 New Lead — Carlsson Studio</h1>
-                  <p>A new project inquiry has been submitted.</p>
-                </div>
+            <body style="margin:0; padding:0; background-color:%s;">
+              <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="background-color:%s;">
+                <tr>
+                  <td align="center" style="padding:32px 16px;">
+                    <table role="presentation" width="600" cellpadding="0" cellspacing="0"
+                           style="width:100%%; max-width:600px; background-color:#ffffff; border:1px solid %s; border-radius:12px; overflow:hidden;">
 
-                <span class="badge">NEW LEAD</span>
+                      <!-- Header -->
+                      <tr>
+                        <td style="padding:28px 32px 20px;">
+                          <span style="font-family:%s; font-size:24px; font-weight:bold; color:%s;">Carlsson Studio</span>
+                          <br>
+                          <span style="font-family:%s; font-size:12px; letter-spacing:2px; text-transform:uppercase; color:%s;">New project inquiry</span>
+                        </td>
+                      </tr>
 
-                <div class="section">
-                  <h3>Contact Details</h3>
-                  <div class="field">
-                    <span class="label">Name</span>
-                    <span class="value">%s</span>
-                  </div>
-                  <div class="field">
-                    <span class="label">Email</span>
-                    <span class="value">%s</span>
-                  </div>
-                  <div class="field">
-                    <span class="label">Company</span>
-                    <span class="value">%s</span>
-                  </div>
-                  <div class="field">
-                    <span class="label">Company Size</span>
-                    <span class="value">%s employees</span>
-                  </div>
-                </div>
+                      <!-- Foundation ribbon -->
+                      <tr>
+                        <td>
+                          <table role="presentation" width="100%%" cellpadding="0" cellspacing="0"><tr>%s</tr></table>
+                        </td>
+                      </tr>
 
-                <div class="section">
-                  <h3>Project Details</h3>
-                  <div class="field">
-                    <span class="label">Industry</span>
-                    <span class="value">%s</span>
-                  </div>
-                  <div class="field">
-                    <span class="label">Build Type</span>
-                    <span class="value">%s</span>
-                  </div>
-                </div>
+                      <!-- Body -->
+                      <tr>
+                        <td style="padding:28px 32px 8px;">
+                          <span style="display:inline-block; background-color:%s; color:#ffffff; font-family:%s; font-size:11px; font-weight:bold; letter-spacing:1px; padding:5px 14px; border-radius:4px;">NEW LEAD</span>
+                        </td>
+                      </tr>
 
-                <div class="section">
-                  <h3>Problems to Solve</h3>
-                  %s
-                </div>
+                      <tr>
+                        <td style="padding:20px 32px 0;">
+                          %s
+                          %s
+                        </td>
+                      </tr>
 
-                <div class="section">
-                  <h3>Required Features</h3>
-                  %s
-                </div>
+                      <!-- Problems / Features -->
+                      <tr>
+                        <td style="padding:20px 32px 0;">
+                          %s
+                          %s
+                        </td>
+                      </tr>
 
-                %s
+                      <!-- Top match -->
+                      %s
 
-                <a href="mailto:%s" class="cta">
-                  Reply to %s →
-                </a>
+                      <!-- CTA -->
+                      <tr>
+                        <td align="center" style="padding:28px 32px;">
+                          <table role="presentation" cellpadding="0" cellspacing="0">
+                            <tr>
+                              <td style="background-color:%s; border-radius:8px;">
+                                <a href="mailto:%s" style="display:inline-block; padding:13px 32px; font-family:%s; font-size:14px; font-weight:bold; color:#ffffff; text-decoration:none;">Reply to %s &rarr;</a>
+                              </td>
+                            </tr>
+                          </table>
+                        </td>
+                      </tr>
 
-                <div class="footer">
-                  Carlsson Studio · Independent Software Studio
-                  · Medan, Indonesia
-                </div>
-              </div>
+                      <!-- Footer -->
+                      <tr>
+                        <td align="center" style="padding:20px 32px 26px; border-top:1px solid %s;">
+                          <span style="font-family:%s; font-size:12px; color:%s;">&copy; Carlsson Studio &middot; Custom Business Software</span>
+                          <br>
+                          <span style="font-family:%s; font-size:12px; color:%s;">Independent Software Studio based in Medan, Indonesia</span>
+                        </td>
+                      </tr>
+
+                    </table>
+                  </td>
+                </tr>
+              </table>
             </body>
             </html>
             """.formatted(
-                lead.getName(),
-                lead.getEmail(),
-                nullSafe(lead.getCompany(), "—"),
-                nullSafe(lead.getCompanySize(), "—"),
-                lead.getIndustry(),
-                lead.getBuildType(),
-                tagsHtml(lead.getProblems()),
-                tagsHtml(lead.getFeatures()),
+                SURFACE, SURFACE, BORDER,
+                SERIF, TEAL,
+                SANS, MUTED,
+                ribbonHtml(),
+                SIENNA, SANS,
+                sectionHtml("Contact details", List.of(
+                    field("Name", name),
+                    field("Email", email),
+                    field("Company", escape(nullSafe(lead.getCompany(), "—"))),
+                    field("Company size", escape(nullSafe(lead.getCompanySize(), "—")))
+                )),
+                sectionHtml("Project details", List.of(
+                    field("Industry", escape(lead.getIndustry())),
+                    field("Build type", escape(lead.getBuildType()))
+                )),
+                tagsSectionHtml("Problems to solve", lead.getProblems()),
+                tagsSectionHtml("Required features", lead.getFeatures()),
                 top != null ? recommendationHtml(top) : "",
-                lead.getEmail(),
-                lead.getName()
+                TEAL, email, SANS, name,
+                BORDER, SANS, MUTED, SANS, MUTED
             );
     }
 
-    private String tagsHtml(List<String> items) {
-        if (items == null || items.isEmpty()) return "<span>—</span>";
+    private String ribbonHtml() {
         StringBuilder sb = new StringBuilder();
-        for (String item : items) {
-            sb.append("<span class=\"tag\">").append(item)
-              .append("</span>");
+        for (String color : RIBBON) {
+            sb.append("<td height=\"4\" style=\"height:4px; font-size:0; line-height:0; background-color:")
+              .append(color).append(";\">&nbsp;</td>");
         }
         return sb.toString();
     }
 
+    private String sectionHtml(String title, List<String> rows) {
+        return """
+            <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="margin-bottom:20px;">
+              <tr><td style="font-family:%s; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:%s; padding-bottom:8px;">%s</td></tr>
+              %s
+            </table>
+            """.formatted(SANS, MUTED, title, String.join("\n", rows));
+    }
+
+    private String field(String label, String value) {
+        return """
+            <tr>
+              <td style="padding:7px 0; border-bottom:1px solid #EDF1F1;">
+                <table role="presentation" width="100%%" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td width="140" style="font-family:%s; font-size:13px; color:%s;">%s</td>
+                    <td style="font-family:%s; font-size:14px; color:%s;">%s</td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            """.formatted(SANS, MUTED, label, SANS, INK, value);
+    }
+
+    private String tagsSectionHtml(String title, List<String> items) {
+        String tags;
+        if (items == null || items.isEmpty()) {
+            tags = "<span style=\"font-family:" + SANS + "; font-size:13px; color:" + MUTED + ";\">—</span>";
+        } else {
+            StringBuilder sb = new StringBuilder();
+            for (String item : items) {
+                sb.append("<span style=\"display:inline-block; background-color:").append(BORDER)
+                  .append("; color:#33413F; font-family:").append(SANS)
+                  .append("; font-size:12px; padding:4px 12px; border-radius:12px; margin:0 4px 6px 0;\">")
+                  .append(escape(item)).append("</span> ");
+            }
+            tags = sb.toString();
+        }
+        return """
+            <table role="presentation" width="100%%" cellpadding="0" cellspacing="0" style="margin-bottom:16px;">
+              <tr><td style="font-family:%s; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:%s; padding-bottom:8px;">%s</td></tr>
+              <tr><td>%s</td></tr>
+            </table>
+            """.formatted(SANS, MUTED, title, tags);
+    }
+
     private String recommendationHtml(RecommendationResponse rec) {
         return """
-            <div class="section">
-              <h3>Top Foundation Match</h3>
-              <div class="recommendation">
-                <div class="rec-name">%s</div>
-                <div class="rec-score">%d%% match</div>
-                <div class="rec-reason">%s</div>
-              </div>
-            </div>
+            <tr>
+              <td style="padding:8px 32px 0;">
+                <table role="presentation" width="100%%" cellpadding="0" cellspacing="0"
+                       style="background-color:%s; border:1px solid %s; border-radius:10px;">
+                  <tr>
+                    <td style="padding:20px 24px;">
+                      <span style="font-family:%s; font-size:12px; letter-spacing:1.5px; text-transform:uppercase; color:%s;">Top foundation match</span>
+                      <br><br>
+                      <span style="font-family:%s; font-size:20px; font-weight:bold; color:%s;">%s</span>
+                      <span style="font-family:%s; font-size:28px; font-weight:bold; color:%s;">&nbsp;&middot;&nbsp;%d%%</span>
+                      <br>
+                      <span style="font-family:%s; font-size:13px; line-height:1.6; color:#33504D;">%s</span>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
             """.formatted(
-                rec.getFoundationName(),
-                rec.getMatchScore(),
-                rec.getMatchReason()
+                TEAL_TINT, TEAL,
+                SANS, TEAL_DARK,
+                SERIF, TEAL, escape(rec.getFoundationName()),
+                SANS, TEAL_DARK, rec.getMatchScore(),
+                SANS, escape(rec.getMatchReason())
             );
     }
 
     private String nullSafe(String value, String fallback) {
         return (value == null || value.isBlank()) ? fallback : value;
+    }
+
+    /** User-supplied values go into HTML; escape them. */
+    private String escape(String value) {
+        if (value == null) return "";
+        return value
+            .replace("&", "&amp;")
+            .replace("<", "&lt;")
+            .replace(">", "&gt;")
+            .replace("\"", "&quot;")
+            .replace("'", "&#39;");
     }
 }
