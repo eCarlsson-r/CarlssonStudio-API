@@ -22,12 +22,14 @@ class RecommendationEngineTest {
                 .industry("Restaurant")
                 .relatedIndustries(List.of("Restaurant", "Cafe",
                     "Food & Beverage", "Catering"))
-                .buildTypes(List.of("POS", "Internal System", "Dashboard"))
+                .buildTypes(List.of("POS", "ERP", "Booking",
+                    "Internal System", "Dashboard"))
                 .problems(List.of("Manual spreadsheets", "No reporting",
                     "No inventory", "No booking", "Duplicate work",
                     "No dashboard"))
-                .features(List.of("Authentication", "Roles", "Dashboard",
-                    "Reports", "Notifications", "AI", "Scheduling", "API"))
+                .features(List.of("Authentication", "Roles", "Inventory",
+                    "Dashboard", "Reports", "Notifications", "AI",
+                    "Scheduling", "API"))
                 .active(true)
                 .build(),
             FoundationEntity.builder()
@@ -35,11 +37,13 @@ class RecommendationEngineTest {
                 .name("CommerceSystem")
                 .industry("Retail")
                 .relatedIndustries(List.of("Retail", "E-Commerce", "Wholesale", "Fashion"))
-                .buildTypes(List.of("POS", "Internal System", "Customer Portal"))
+                .buildTypes(List.of("POS", "ERP", "E-Commerce",
+                		"Internal System", "Customer Portal"))
                 .problems(List.of("Manual spreadsheets", "No inventory",
                 		"No reporting", "Duplicate work", "No dashboard"))
-                .features(List.of("Authentication", "Roles", "Payments", "Reports", 
-                		"Dashboard", "Invoices", "API", "Notifications"))
+                .features(List.of("Authentication", "Roles", "Payments",
+                		"Inventory", "Reports", "Dashboard", "Invoices",
+                		"API", "Notifications"))
                 .active(true)
                 .build(),
             FoundationEntity.builder()
@@ -71,11 +75,11 @@ class RecommendationEngineTest {
                 .name("SpaSystem")
                 .industry("Wellness")
                 .relatedIndustries(List.of("Wellness","Spa","Beauty","Healthcare","Fitness"))
-                .buildTypes(List.of("Booking","Internal System","Customer Portal"))
-                .problems(List.of("No booking", "Manual spreadsheets", 
+                .buildTypes(List.of("Booking","ERP","Internal System","Customer Portal"))
+                .problems(List.of("No booking", "Manual spreadsheets",
                 		"No inventory","WhatsApp chaos", "No reporting"))
                 .features(List.of("Authentication", "Roles", "Scheduling", "Payments",
-                		"Notifications", "Reports", "Dashboard", "Mobile"))
+                		"Inventory", "Notifications", "Reports", "Dashboard", "Mobile"))
 	            .active(true)
 	            .build(),
 	        FoundationEntity.builder()
@@ -92,10 +96,10 @@ class RecommendationEngineTest {
             FoundationEntity.builder()
                 .slug("human-design")
                 .name("HumanDesign")
-                .industry("AI")
-                .relatedIndustries(List.of("AI","Professional Services","Consulting","Education","HR & Payroll"))
-                .buildTypes(List.of("AI Assistant","Customer Portal","Dashboard"))
-                .problems(List.of("No reporting", "No dashboard", "Duplicate work", "Manual spreadsheets"))
+                .industry("Recruitment")
+                .relatedIndustries(List.of("Recruitment","HR & Payroll","Professional Services","Consulting","Agencies","Education","AI"))
+                .buildTypes(List.of("AI Assistant","Customer Portal","Internal System","Dashboard"))
+                .problems(List.of("Hiring mismatches","No candidate assessment","Manual spreadsheets","No reporting","No dashboard","Duplicate work"))
                 .features(List.of("Authentication","AI","API","Reports","Dashboard","Mobile"))
                 .active(true)
                 .build(),
@@ -178,6 +182,25 @@ class RecommendationEngineTest {
         assertEquals(3, results.size());
         // No perfect match — top score should be below 100
         assertTrue(results.get(0).getScore() < 100);
+    }
+
+    @Test
+    void retailEcommerceLeadShouldMatchCommerceSystemFirst() {
+        LeadRequest request = new LeadRequest();
+        request.setName("Test");
+        request.setEmail("test@test.com");
+        request.setIndustry("Retail");
+        request.setBuildType("E-Commerce");
+        request.setProblems(List.of(
+                "No inventory", "Manual spreadsheets"));
+        request.setFeatures(List.of(
+                "Inventory", "Payments", "Dashboard"));
+
+        List<ScoringResult> results = engine.recommend(request);
+
+        assertEquals("commerce-system",
+                results.get(0).getFoundation().getSlug());
+        assertTrue(results.get(0).getScore() >= 90);
     }
 
     @Test
