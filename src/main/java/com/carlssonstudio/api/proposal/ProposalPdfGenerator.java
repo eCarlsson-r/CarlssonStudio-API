@@ -134,7 +134,9 @@ public class ProposalPdfGenerator {
         addTableRow(clientTable, "Name",
             lead.getName(), regular, bold);
         addTableRow(clientTable, "Email",
-            lead.getEmail(), regular, bold);
+            nullSafe(lead.getEmail(), "—"), regular, bold);
+        addTableRow(clientTable, "Phone / WhatsApp",
+            nullSafe(lead.getPhone(), "—"), regular, bold);
         addTableRow(clientTable, "Company",
             nullSafe(lead.getCompany(), "—"), regular, bold);
         addTableRow(clientTable, "Company Size",

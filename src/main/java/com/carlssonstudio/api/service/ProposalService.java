@@ -105,6 +105,8 @@ public class ProposalService {
                 .id(lead.getId())
                 .name(lead.getName())
                 .email(lead.getEmail())
+                .phone(lead.getPhone())
+                .whatsappOptIn(lead.isWhatsappOptIn())
                 .company(lead.getCompany())
                 .companySize(lead.getCompanySize())
                 .industry(lead.getIndustry())

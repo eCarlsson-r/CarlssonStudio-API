@@ -3,6 +3,7 @@ package com.carlssonstudio.api.controller;
 import com.carlssonstudio.api.dto.*;
 import com.carlssonstudio.api.entity.LeadStatus;
 import com.carlssonstudio.api.service.LeadService;
+import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.ResponseEntity;
@@ -20,10 +21,23 @@ public class LeadController {
     // Public — called by Next.js questionnaire
     @PostMapping
     public ResponseEntity<ApiResponse<LeadResponse>> submit(
-            @Valid @RequestBody LeadRequest request) {
-        LeadResponse response = leadService.submit(request);
+            @Valid @RequestBody LeadRequest request,
+            HttpServletRequest httpRequest) {
+        LeadResponse response = leadService.submit(
+            request, clientIp(httpRequest),
+            httpRequest.getHeader("User-Agent"));
         return ResponseEntity.ok(
             ApiResponse.ok("Submission received", response));
+    }
+
+    /** Behind a proxy/load balancer, the real visitor IP is in
+     *  X-Forwarded-For (first hop); fall back to the socket address. */
+    private String clientIp(HttpServletRequest request) {
+        String forwarded = request.getHeader("X-Forwarded-For");
+        if (forwarded != null && !forwarded.isBlank()) {
+            return forwarded.split(",")[0].trim();
+        }
+        return request.getRemoteAddr();
     }
 
     // Admin only — secured by Spring Security

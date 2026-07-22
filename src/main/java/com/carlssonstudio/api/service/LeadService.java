@@ -19,12 +19,22 @@ public class LeadService {
     private final LeadRecommendationRepository recommendationRepository;
     private final RecommendationEngine recommendationEngine;
     private final NotificationService notificationService;
+    private final WhatsAppService whatsAppService;
+    private final MetaConversionsApiService metaConversionsApiService;
 
     @Transactional
     public LeadResponse submit(LeadRequest request) {
+        return submit(request, null, null);
+    }
+
+    @Transactional
+    public LeadResponse submit(LeadRequest request, String clientIp, String userAgent) {
         Lead lead = Lead.builder()
                 .name(request.getName())
                 .email(request.getEmail())
+                .phone(request.getPhone())
+                .whatsappOptIn(Boolean.TRUE.equals(
+                    request.getWhatsappOptIn()))
                 .company(request.getCompany())
                 .companySize(request.getCompanySize())
                 .industry(request.getIndustry())
@@ -55,6 +65,10 @@ public class LeadService {
 
         // Asynchronous — does not block the HTTP response
         notificationService.sendLeadNotification(response);
+        whatsAppService.sendLeadFollowUp(response);
+        metaConversionsApiService.sendLeadEvent(response,
+            request.getFbEventId(), request.getFbp(), request.getFbc(),
+            clientIp, userAgent);
 
         return response;
     }
@@ -101,6 +115,8 @@ public class LeadService {
                 .id(lead.getId())
                 .name(lead.getName())
                 .email(lead.getEmail())
+                .phone(lead.getPhone())
+                .whatsappOptIn(lead.isWhatsappOptIn())
                 .company(lead.getCompany())
                 .companySize(lead.getCompanySize())
                 .industry(lead.getIndustry())

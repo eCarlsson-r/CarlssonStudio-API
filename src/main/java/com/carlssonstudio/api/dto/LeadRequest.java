@@ -11,10 +11,16 @@ public class LeadRequest {
     @Size(max = 100)
     private String name;
 
-    @NotBlank(message = "Email is required")
     @Email(message = "Invalid email format")
     @Size(max = 150)
     private String email;
+
+    @Size(max = 25)
+    @Pattern(regexp = "^[+0-9 ().-]*$",
+             message = "Invalid phone number format")
+    private String phone;
+
+    private Boolean whatsappOptIn;
 
     @Size(max = 100)
     private String company;
@@ -34,4 +40,23 @@ public class LeadRequest {
     @NotNull(message = "Features list is required")
     @Size(min = 1, message = "Select at least one feature")
     private List<String> features;
+
+    // Meta ad-tracking metadata — all optional, absent when the Pixel
+    // is blocked or the visitor didn't arrive from an ad. fbEventId ties
+    // this submission's server-side Conversions API event to the
+    // matching client-side Pixel event so Meta deduplicates the pair.
+    private String fbEventId;
+    private String fbp;
+    private String fbc;
+
+    /**
+     * Cross-field rule: a prospect must be reachable somehow. Bean
+     * Validation runs this as a property named "contactProvided" —
+     * reported as a normal field error by GlobalExceptionHandler.
+     */
+    @AssertTrue(message = "Provide an email address or a WhatsApp number")
+    public boolean isContactProvided() {
+        return (email != null && !email.isBlank())
+            || (phone != null && !phone.isBlank());
+    }
 }

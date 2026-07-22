@@ -38,7 +38,7 @@ public class EmailTemplateService {
                 ? null : lead.getRecommendations().get(0);
 
         String name = escape(lead.getName());
-        String email = escape(lead.getEmail());
+        String email = escape(nullSafe(lead.getEmail(), "—"));
 
         return """
             <!DOCTYPE html>
@@ -97,17 +97,7 @@ public class EmailTemplateService {
                       %s
 
                       <!-- CTA -->
-                      <tr>
-                        <td align="center" style="padding:28px 32px;">
-                          <table role="presentation" cellpadding="0" cellspacing="0">
-                            <tr>
-                              <td style="background-color:%s; border-radius:8px;">
-                                <a href="mailto:%s" style="display:inline-block; padding:13px 32px; font-family:%s; font-size:14px; font-weight:bold; color:#ffffff; text-decoration:none;">Reply to %s &rarr;</a>
-                              </td>
-                            </tr>
-                          </table>
-                        </td>
-                      </tr>
+                      %s
 
                       <!-- Footer -->
                       <tr>
@@ -133,6 +123,7 @@ public class EmailTemplateService {
                 sectionHtml("Contact details", List.of(
                     field("Name", name),
                     field("Email", email),
+                    field("WhatsApp", whatsappFieldHtml(lead)),
                     field("Company", escape(nullSafe(lead.getCompany(), "—"))),
                     field("Company size", escape(nullSafe(lead.getCompanySize(), "—")))
                 )),
@@ -143,9 +134,61 @@ public class EmailTemplateService {
                 tagsSectionHtml("Problems to solve", lead.getProblems()),
                 tagsSectionHtml("Required features", lead.getFeatures()),
                 top != null ? recommendationHtml(top) : "",
-                TEAL, email, SANS, name,
+                replyCtaHtml(lead, name),
                 BORDER, SANS, MUTED, SANS, MUTED
             );
+    }
+
+    /**
+     * "Reply to {name}" opens email when one was given; otherwise it
+     * opens a WhatsApp chat, since LeadRequest guarantees at least one
+     * of the two exists. Falls back to plain text in the (practically
+     * unreachable) case neither is present, so the layout never breaks.
+     */
+    private String replyCtaHtml(LeadResponse lead, String name) {
+        String href;
+        if (lead.getEmail() != null && !lead.getEmail().isBlank()) {
+            href = "mailto:" + escape(lead.getEmail());
+        } else {
+            String normalized = WhatsAppService
+                .normalizeToWhatsAppNumber(lead.getPhone());
+            href = normalized != null ? "https://wa.me/" + normalized : null;
+        }
+        if (href == null) {
+            return "";
+        }
+        return """
+            <tr>
+              <td align="center" style="padding:28px 32px;">
+                <table role="presentation" cellpadding="0" cellspacing="0">
+                  <tr>
+                    <td style="background-color:%s; border-radius:8px;">
+                      <a href="%s" style="display:inline-block; padding:13px 32px; font-family:%s; font-size:14px; font-weight:bold; color:#ffffff; text-decoration:none;">Reply to %s &rarr;</a>
+                    </td>
+                  </tr>
+                </table>
+              </td>
+            </tr>
+            """.formatted(TEAL, href, SANS, name);
+    }
+
+    /** Tap-to-chat wa.me link so the notification email doubles as a
+     *  one-click WhatsApp opener; falls back to a dash when the
+     *  prospect left no number. */
+    private String whatsappFieldHtml(LeadResponse lead) {
+        String normalized = WhatsAppService
+            .normalizeToWhatsAppNumber(lead.getPhone());
+        if (normalized == null) {
+            return "—";
+        }
+        String optInNote = lead.isWhatsappOptIn()
+            ? " &middot; opted in"
+            : " &middot; no opt-in";
+        return "<a href=\"https://wa.me/" + normalized
+            + "\" style=\"color:" + TEAL
+            + "; text-decoration:none;\">+" + normalized + "</a>"
+            + "<span style=\"color:" + MUTED + ";\">"
+            + optInNote + "</span>";
     }
 
     private String ribbonHtml() {
