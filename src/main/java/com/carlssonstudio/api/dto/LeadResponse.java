@@ -12,7 +12,6 @@ public class LeadResponse {
     private String name;
     private String email;
     private String phone;
-    private boolean whatsappOptIn;
     private String company;
     private String companySize;
     private String industry;

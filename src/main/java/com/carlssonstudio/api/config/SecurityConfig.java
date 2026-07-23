@@ -54,7 +54,10 @@ public class SecurityConfig {
         CorsConfiguration config = new CorsConfiguration();
         config.setAllowedOrigins(List.of(corsOrigins.split(","))); // from CORS_ORIGINS
         config.setAllowedMethods(List.of("GET", "POST", "OPTIONS"));
-        config.setAllowedHeaders(List.of("Content-Type", "Accept"));
+        // Accept-Language drives response localization (see LocaleConfig) —
+        // must be allowlisted or the browser preflight rejects it before
+        // the request ever reaches this filter chain.
+        config.setAllowedHeaders(List.of("Content-Type", "Accept", "Accept-Language"));
         UrlBasedCorsConfigurationSource source = new UrlBasedCorsConfigurationSource();
         source.registerCorsConfiguration("/**", config);
         return source;

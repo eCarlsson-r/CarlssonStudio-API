@@ -2,6 +2,7 @@ package com.carlssonstudio.api.service;
 
 import com.carlssonstudio.api.config.MetaCapiProperties;
 import com.carlssonstudio.api.dto.LeadResponse;
+import com.carlssonstudio.api.util.PhoneNumberUtils;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.MediaType;
@@ -119,7 +120,7 @@ public class MetaConversionsApiService {
     /** Digits-only international format (reuses the WhatsApp normalizer),
      *  then SHA-256 hex — Meta's required phone format. */
     static String hashPhone(String phone) {
-        String normalized = WhatsAppService.normalizeToWhatsAppNumber(phone);
+        String normalized = PhoneNumberUtils.normalizeToWhatsAppNumber(phone);
         return normalized == null ? null : sha256Hex(normalized);
     }
 

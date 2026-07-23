@@ -2,6 +2,7 @@ package com.carlssonstudio.api.service;
 
 import com.carlssonstudio.api.dto.LeadResponse;
 import com.carlssonstudio.api.dto.RecommendationResponse;
+import com.carlssonstudio.api.util.PhoneNumberUtils;
 import org.springframework.stereotype.Service;
 import java.util.List;
 
@@ -150,7 +151,7 @@ public class EmailTemplateService {
         if (lead.getEmail() != null && !lead.getEmail().isBlank()) {
             href = "mailto:" + escape(lead.getEmail());
         } else {
-            String normalized = WhatsAppService
+            String normalized = PhoneNumberUtils
                 .normalizeToWhatsAppNumber(lead.getPhone());
             href = normalized != null ? "https://wa.me/" + normalized : null;
         }
@@ -176,19 +177,14 @@ public class EmailTemplateService {
      *  one-click WhatsApp opener; falls back to a dash when the
      *  prospect left no number. */
     private String whatsappFieldHtml(LeadResponse lead) {
-        String normalized = WhatsAppService
+        String normalized = PhoneNumberUtils
             .normalizeToWhatsAppNumber(lead.getPhone());
         if (normalized == null) {
             return "—";
         }
-        String optInNote = lead.isWhatsappOptIn()
-            ? " &middot; opted in"
-            : " &middot; no opt-in";
         return "<a href=\"https://wa.me/" + normalized
             + "\" style=\"color:" + TEAL
-            + "; text-decoration:none;\">+" + normalized + "</a>"
-            + "<span style=\"color:" + MUTED + ";\">"
-            + optInNote + "</span>";
+            + "; text-decoration:none;\">+" + normalized + "</a>";
     }
 
     private String ribbonHtml() {

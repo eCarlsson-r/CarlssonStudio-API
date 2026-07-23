@@ -28,10 +28,6 @@ public class Lead {
     @Column(length = 25)
     private String phone;
 
-    @Column(name = "whatsapp_opt_in", nullable = false)
-    @Builder.Default
-    private boolean whatsappOptIn = false;
-
     @Column(length = 100)
     private String company;
 

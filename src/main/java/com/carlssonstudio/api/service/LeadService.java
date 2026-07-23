@@ -8,6 +8,7 @@ import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import java.util.List;
+import java.util.Locale;
 import java.util.stream.Collectors;
 
 @Service
@@ -19,22 +20,19 @@ public class LeadService {
     private final LeadRecommendationRepository recommendationRepository;
     private final RecommendationEngine recommendationEngine;
     private final NotificationService notificationService;
-    private final WhatsAppService whatsAppService;
     private final MetaConversionsApiService metaConversionsApiService;
 
     @Transactional
     public LeadResponse submit(LeadRequest request) {
-        return submit(request, null, null);
+        return submit(request, null, null, Locale.ENGLISH);
     }
 
     @Transactional
-    public LeadResponse submit(LeadRequest request, String clientIp, String userAgent) {
+    public LeadResponse submit(LeadRequest request, String clientIp, String userAgent, Locale locale) {
         Lead lead = Lead.builder()
                 .name(request.getName())
                 .email(request.getEmail())
                 .phone(request.getPhone())
-                .whatsappOptIn(Boolean.TRUE.equals(
-                    request.getWhatsappOptIn()))
                 .company(request.getCompany())
                 .companySize(request.getCompanySize())
                 .industry(request.getIndustry())
@@ -47,7 +45,7 @@ public class LeadService {
         Lead saved = leadRepository.save(lead);
 
         List<ScoringResult> results =
-            recommendationEngine.recommend(request);
+            recommendationEngine.recommend(request, locale);
 
         List<LeadRecommendation> recs = results.stream()
                 .map(r -> LeadRecommendation.builder()
@@ -65,7 +63,6 @@ public class LeadService {
 
         // Asynchronous — does not block the HTTP response
         notificationService.sendLeadNotification(response);
-        whatsAppService.sendLeadFollowUp(response);
         metaConversionsApiService.sendLeadEvent(response,
             request.getFbEventId(), request.getFbp(), request.getFbc(),
             clientIp, userAgent);
@@ -116,7 +113,6 @@ public class LeadService {
                 .name(lead.getName())
                 .email(lead.getEmail())
                 .phone(lead.getPhone())
-                .whatsappOptIn(lead.isWhatsappOptIn())
                 .company(lead.getCompany())
                 .companySize(lead.getCompanySize())
                 .industry(lead.getIndustry())

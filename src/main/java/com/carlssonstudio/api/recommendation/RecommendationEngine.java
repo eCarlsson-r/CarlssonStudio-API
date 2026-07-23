@@ -5,6 +5,7 @@ import com.carlssonstudio.api.entity.FoundationEntity;
 import com.carlssonstudio.api.repository.FoundationRepository;
 
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
 import org.springframework.stereotype.Component;
 
 import java.util.*;
@@ -15,6 +16,7 @@ import java.util.stream.Collectors;
 public class RecommendationEngine {
 
     private final FoundationRepository foundationRepository;
+    private final MessageSource messageSource;
 
     // Weights — must sum to 100
     private static final int WEIGHT_INDUSTRY   = 40;
@@ -22,18 +24,18 @@ public class RecommendationEngine {
     private static final int WEIGHT_PROBLEMS   = 20;
     private static final int WEIGHT_FEATURES   = 15;
 
-    public List<ScoringResult> recommend(LeadRequest request) {
+    public List<ScoringResult> recommend(LeadRequest request, Locale locale) {
     	return foundationRepository.findByActiveTrue()
                 .stream()
                 .map(this::toFoundation)
-                .map(f -> score(f, request))
+                .map(f -> score(f, request, locale))
                 .sorted(Comparator
                     .comparingInt(ScoringResult::getScore)
                     .reversed())
                 .limit(3)
                 .collect(Collectors.toList());
     }
-    
+
     private Foundation toFoundation(FoundationEntity e) {
         return Foundation.builder()
                 .slug(e.getSlug())
@@ -47,7 +49,7 @@ public class RecommendationEngine {
                 .build();
     }
 
-    private ScoringResult score(Foundation f, LeadRequest req) {
+    private ScoringResult score(Foundation f, LeadRequest req, Locale locale) {
         int industryScore   = scoreIndustry(f, req.getIndustry());
         int buildTypeScore  = scoreBuildType(f, req.getBuildType());
         int problemScore    = scoreList(
@@ -66,7 +68,7 @@ public class RecommendationEngine {
         total = Math.min(total, 100);
 
         String reason = buildReason(
-            f, req, industryScore, buildTypeScore,
+            f, req, locale, industryScore, buildTypeScore,
             problemScore, featureScore);
 
         return ScoringResult.builder()
@@ -106,23 +108,36 @@ public class RecommendationEngine {
             (matched * 100.0) / requestItems.size());
     }
 
-    private String buildReason(Foundation f, LeadRequest req,
+    /**
+     * Composes the human-readable reason in the caller's locale. Sentence
+     * templates and connective phrases come from MessageSource
+     * (messages.properties / messages_id.properties); the entity values
+     * embedded in them (industry, build type, problem and feature names)
+     * are translated separately via OptionLabels, since those are open,
+     * free-text catalog values rather than fixed system messages.
+     */
+    private String buildReason(Foundation f, LeadRequest req, Locale locale,
                                int industryScore, int buildTypeScore,
                                int problemScore, int featureScore) {
 
         List<String> reasons = new ArrayList<>();
 
         if (industryScore == 100) {
-            reasons.add(f.getName() + " is purpose-built for " +
-                req.getIndustry());
+            String industryLabel = OptionLabels.industry(req.getIndustry(), locale);
+            reasons.add(messageSource.getMessage(
+                "reason.industry.exact",
+                new Object[]{f.getName(), industryLabel}, locale));
         } else if (industryScore == 50) {
-            reasons.add(f.getName() + " covers related workflows " +
-                "in your industry");
+            reasons.add(messageSource.getMessage(
+                "reason.industry.related",
+                new Object[]{f.getName()}, locale));
         }
 
         if (buildTypeScore == 100) {
-            reasons.add("matches your " + req.getBuildType() +
-                " requirement");
+            String buildTypeLabel = OptionLabels.buildType(req.getBuildType(), locale);
+            reasons.add(messageSource.getMessage(
+                "reason.buildType.match",
+                new Object[]{buildTypeLabel}, locale));
         }
 
         // Matched problems
@@ -130,10 +145,12 @@ public class RecommendationEngine {
             List<String> matchedProblems = req.getProblems().stream()
                     .filter(p -> f.getProblems().stream()
                             .anyMatch(fp -> fp.equalsIgnoreCase(p)))
+                    .map(p -> OptionLabels.problem(p, locale))
                     .collect(Collectors.toList());
             if (!matchedProblems.isEmpty()) {
-                reasons.add("solves: " +
-                    String.join(", ", matchedProblems));
+                reasons.add(messageSource.getMessage(
+                    "reason.problems.solves",
+                    new Object[]{String.join(", ", matchedProblems)}, locale));
             }
         }
 
@@ -142,13 +159,17 @@ public class RecommendationEngine {
             List<String> matchedFeatures = req.getFeatures().stream()
                     .filter(feat -> f.getFeatures().stream()
                             .anyMatch(ff -> ff.equalsIgnoreCase(feat)))
+                    .map(feat -> OptionLabels.feature(feat, locale))
                     .collect(Collectors.toList());
             if (!matchedFeatures.isEmpty()) {
-                reasons.add("includes: " +
-                    String.join(", ", matchedFeatures));
+                reasons.add(messageSource.getMessage(
+                    "reason.features.includes",
+                    new Object[]{String.join(", ", matchedFeatures)}, locale));
             }
         }
 
+        // Fallback is the foundation's DB-authored description, English
+        // only for now — see the summary note on a description_id column.
         return reasons.isEmpty()
                 ? f.getDescription()
                 : String.join(". ", reasons) + ".";

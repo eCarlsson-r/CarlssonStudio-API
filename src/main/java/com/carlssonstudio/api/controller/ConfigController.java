@@ -3,6 +3,7 @@ package com.carlssonstudio.api.controller;
 import com.carlssonstudio.api.dto.*;
 import com.carlssonstudio.api.service.FoundationService;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.*;
@@ -14,18 +15,19 @@ import java.util.*;
 public class ConfigController {
 
     private final FoundationService foundationService;
+    private final MessageSource messageSource;
 
     @GetMapping("/foundations")
     public ResponseEntity<ApiResponse<List<FoundationResponse>>>
-            activeFoundations() {
+            activeFoundations(Locale locale) {
         return ResponseEntity.ok(ApiResponse.ok(
-            "Active foundations",
+            messageSource.getMessage("api.config.foundations", null, locale),
             foundationService.findActive()));
     }
 
     @GetMapping("/questionnaire")
     public ResponseEntity<ApiResponse<Map<String, Object>>>
-            questionnaire() {
+            questionnaire(Locale locale) {
         List<FoundationResponse> active =
             foundationService.findActive();
 
@@ -52,6 +54,7 @@ public class ConfigController {
             List.of("1-5", "5-20", "20-100", "100+"));
 
         return ResponseEntity.ok(ApiResponse.ok(
-            "Questionnaire config", config));
+            messageSource.getMessage("api.config.questionnaire", null, locale),
+            config));
     }
 }

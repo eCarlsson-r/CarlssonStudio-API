@@ -6,14 +6,29 @@ import com.carlssonstudio.api.repository.FoundationRepository;
 
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.springframework.context.support.ResourceBundleMessageSource;
 import java.util.List;
+import java.util.Locale;
 
 import static org.junit.jupiter.api.Assertions.*;
 
 class RecommendationEngineTest {
 
     private RecommendationEngine engine;
-    
+
+    /**
+     * Real bundle, not a stub — exercises the actual messages.properties /
+     * messages_id.properties on the classpath so a typo'd or missing key
+     * fails here instead of only surfacing at runtime.
+     */
+    private static ResourceBundleMessageSource messageSource() {
+        ResourceBundleMessageSource source = new ResourceBundleMessageSource();
+        source.setBasename("messages");
+        source.setDefaultEncoding("UTF-8");
+        source.setUseCodeAsDefaultMessage(false);
+        return source;
+    }
+
     private List<FoundationEntity> testFoundations() {
         return List.of(
             FoundationEntity.builder()
@@ -123,7 +138,7 @@ class RecommendationEngineTest {
     		    org.mockito.Mockito.mock(FoundationRepository.class);
     		org.mockito.Mockito.when(fakeRepo.findByActiveTrue())
     		    .thenReturn(testFoundations());
-    		engine = new RecommendationEngine(fakeRepo);
+    		engine = new RecommendationEngine(fakeRepo, messageSource());
     }
 
     @Test
@@ -140,7 +155,7 @@ class RecommendationEngineTest {
                 "Dashboard", "Reports", "Authentication",
                 "Scheduling"));
 
-        List<ScoringResult> results = engine.recommend(request);
+        List<ScoringResult> results = engine.recommend(request, Locale.ENGLISH);
 
         assertEquals(3, results.size());
         assertEquals("resto-system",
@@ -158,7 +173,7 @@ class RecommendationEngineTest {
         request.setProblems(List.of("No booking"));
         request.setFeatures(List.of("Scheduling"));
 
-        List<ScoringResult> results = engine.recommend(request);
+        List<ScoringResult> results = engine.recommend(request, Locale.ENGLISH);
 
         for (int i = 0; i < results.size() - 1; i++) {
             assertTrue(results.get(i).getScore() >= results.get(i + 1).getScore());
@@ -177,7 +192,7 @@ class RecommendationEngineTest {
         request.setProblems(List.of("Manual spreadsheets"));
         request.setFeatures(List.of("Dashboard"));
 
-        List<ScoringResult> results = engine.recommend(request);
+        List<ScoringResult> results = engine.recommend(request, Locale.ENGLISH);
 
         assertEquals(3, results.size());
         // No perfect match — top score should be below 100
@@ -196,11 +211,45 @@ class RecommendationEngineTest {
         request.setFeatures(List.of(
                 "Inventory", "Payments", "Dashboard"));
 
-        List<ScoringResult> results = engine.recommend(request);
+        List<ScoringResult> results = engine.recommend(request, Locale.ENGLISH);
 
         assertEquals("commerce-system",
                 results.get(0).getFoundation().getSlug());
         assertTrue(results.get(0).getScore() >= 90);
+    }
+
+    @Test
+    void indonesianLocaleReturnsLocalizedReasonWithSameScore() {
+        LeadRequest request = new LeadRequest();
+        request.setName("Test");
+        request.setEmail("test@test.com");
+        request.setIndustry("Restaurant");
+        request.setBuildType("POS");
+        request.setProblems(List.of("Manual spreadsheets", "No reporting"));
+        request.setFeatures(List.of("Reports"));
+
+        Locale indonesian = Locale.forLanguageTag("id");
+        List<ScoringResult> resultsId = engine.recommend(request, indonesian);
+        List<ScoringResult> resultsEn = engine.recommend(request, Locale.ENGLISH);
+
+        ScoringResult topId = resultsId.get(0);
+        ScoringResult topEn = resultsEn.get(0);
+
+        // Locale changes the reason text only — scoring/matching is unaffected.
+        assertEquals("resto-system", topId.getFoundation().getSlug());
+        assertEquals(topEn.getScore(), topId.getScore());
+
+        String reason = topId.getReason();
+        assertTrue(reason.contains("Restoran"),
+            "expected the Indonesian industry label \"Restoran\" in: " + reason);
+        assertTrue(reason.contains("Sistem Kasir (POS)"),
+            "expected the Indonesian build-type label in: " + reason);
+        assertTrue(reason.contains("Masih pakai Excel"),
+            "expected the Indonesian problem label in: " + reason);
+        assertTrue(reason.contains("Laporan"),
+            "expected the Indonesian feature label in: " + reason);
+        assertFalse(reason.contains("is purpose-built"),
+            "reason should not fall back to English: " + reason);
     }
 
     @Test
@@ -219,7 +268,7 @@ class RecommendationEngineTest {
                 "Reports", "Notifications", "AI",
                 "Scheduling", "API"));
 
-        List<ScoringResult> results = engine.recommend(request);
+        List<ScoringResult> results = engine.recommend(request, Locale.ENGLISH);
 
         results.forEach(r -> assertTrue(r.getScore() <= 100));
     }

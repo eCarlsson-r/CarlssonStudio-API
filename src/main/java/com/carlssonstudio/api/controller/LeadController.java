@@ -6,9 +6,11 @@ import com.carlssonstudio.api.service.LeadService;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import org.springframework.context.MessageSource;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 import java.util.List;
+import java.util.Locale;
 
 @RestController
 @RequestMapping("/api/leads")
@@ -17,17 +19,23 @@ import java.util.List;
 public class LeadController {
 
     private final LeadService leadService;
+    private final MessageSource messageSource;
 
-    // Public — called by Next.js questionnaire
+    // Public — called by Next.js questionnaire. `locale` is resolved by
+    // Spring MVC from the Accept-Language header (see config/LocaleConfig)
+    // and drives both the recommendation reason text and this envelope
+    // message.
     @PostMapping
     public ResponseEntity<ApiResponse<LeadResponse>> submit(
             @Valid @RequestBody LeadRequest request,
-            HttpServletRequest httpRequest) {
+            HttpServletRequest httpRequest,
+            Locale locale) {
         LeadResponse response = leadService.submit(
             request, clientIp(httpRequest),
-            httpRequest.getHeader("User-Agent"));
-        return ResponseEntity.ok(
-            ApiResponse.ok("Submission received", response));
+            httpRequest.getHeader("User-Agent"), locale);
+        return ResponseEntity.ok(ApiResponse.ok(
+            messageSource.getMessage("api.lead.submitted", null, locale),
+            response));
     }
 
     /** Behind a proxy/load balancer, the real visitor IP is in

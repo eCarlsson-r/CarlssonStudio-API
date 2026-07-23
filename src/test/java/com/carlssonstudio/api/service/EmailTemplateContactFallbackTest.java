@@ -38,7 +38,6 @@ class EmailTemplateContactFallbackTest {
         LeadResponse lead = baseLead()
             .email(null)
             .phone("081234567890")
-            .whatsappOptIn(true)
             .build();
 
         String html = service.buildLeadNotificationHtml(lead);
@@ -66,7 +65,6 @@ class EmailTemplateContactFallbackTest {
         LeadResponse lead = baseLead()
             .email(null)
             .phone("081234567890")
-            .whatsappOptIn(true)
             .build();
 
         String html = service.buildLeadNotificationHtml(lead);

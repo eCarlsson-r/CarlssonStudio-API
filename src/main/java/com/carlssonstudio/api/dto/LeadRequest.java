@@ -7,38 +7,36 @@ import java.util.List;
 @Data
 public class LeadRequest {
 
-    @NotBlank(message = "Name is required")
+    @NotBlank(message = "{lead.name.required}")
     @Size(max = 100)
     private String name;
 
-    @Email(message = "Invalid email format")
+    @Email(message = "{lead.email.invalid}")
     @Size(max = 150)
     private String email;
 
     @Size(max = 25)
     @Pattern(regexp = "^[+0-9 ().-]*$",
-             message = "Invalid phone number format")
+             message = "{lead.phone.invalid}")
     private String phone;
-
-    private Boolean whatsappOptIn;
 
     @Size(max = 100)
     private String company;
 
     private String companySize;  // "1-5", "5-20", "20-100", "100+"
 
-    @NotBlank(message = "Industry is required")
+    @NotBlank(message = "{lead.industry.required}")
     private String industry;
 
-    @NotBlank(message = "Build type is required")
+    @NotBlank(message = "{lead.buildType.required}")
     private String buildType;
 
-    @NotNull(message = "Problems list is required")
-    @Size(min = 1, message = "Select at least one problem")
+    @NotNull(message = "{lead.problems.required}")
+    @Size(min = 1, message = "{lead.problems.required}")
     private List<String> problems;
 
-    @NotNull(message = "Features list is required")
-    @Size(min = 1, message = "Select at least one feature")
+    @NotNull(message = "{lead.features.required}")
+    @Size(min = 1, message = "{lead.features.required}")
     private List<String> features;
 
     // Meta ad-tracking metadata — all optional, absent when the Pixel
@@ -54,7 +52,7 @@ public class LeadRequest {
      * Validation runs this as a property named "contactProvided" —
      * reported as a normal field error by GlobalExceptionHandler.
      */
-    @AssertTrue(message = "Provide an email address or a WhatsApp number")
+    @AssertTrue(message = "{lead.contact.required}")
     public boolean isContactProvided() {
         return (email != null && !email.isBlank())
             || (phone != null && !phone.isBlank());
