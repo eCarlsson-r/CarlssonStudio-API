@@ -21,6 +21,9 @@ public interface LeadRepository extends JpaRepository<Lead, Long> {
 
     @Query("SELECT l.industry AS k, COUNT(l) AS v FROM Lead l GROUP BY l.industry")
     List<Object[]> countGroupByIndustry();
+    
+    @Query("SELECT l.source AS k, COUNT(l) AS v FROM Lead l GROUP BY l.source")
+    List<Object[]> countGroupBySource();
 
     @Query("SELECT FUNCTION('DATE', l.createdAt) AS d, COUNT(l) AS c " +
            "FROM Lead l WHERE l.createdAt >= :since " +

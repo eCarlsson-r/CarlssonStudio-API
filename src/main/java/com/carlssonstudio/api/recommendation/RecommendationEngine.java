@@ -42,6 +42,7 @@ public class RecommendationEngine {
                 .name(e.getName())
                 .industry(e.getIndustry())
                 .relatedIndustries(e.getRelatedIndustries())
+                .moduleIndustries(e.getModuleIndustries())
                 .buildTypes(e.getBuildTypes())
                 .problems(e.getProblems())
                 .features(e.getFeatures())
@@ -78,13 +79,36 @@ public class RecommendationEngine {
                 .build();
     }
 
+    /**
+     * 100 — exact industry match. 50 — one of the foundation's hand-curated
+     * related industries. 25 — no curated match, but a real module in this
+     * foundation's exported catalog (see FoundationEntity#moduleIndustries)
+     * already lists this industry as reusable_for — a weaker, module-level
+     * signal rather than a foundation-level one. 0 — no match anywhere.
+     */
     private int scoreIndustry(Foundation f, String industry) {
         if (f.getIndustry().equalsIgnoreCase(industry)) {
             return 100;
         }
         boolean related = f.getRelatedIndustries().stream()
                 .anyMatch(r -> r.equalsIgnoreCase(industry));
-        return related ? 50 : 0;
+        if (related) return 50;
+
+        boolean moduleReuse = f.getModuleIndustries() != null
+                && f.getModuleIndustries().stream()
+                        .anyMatch(m -> normalize(m).equals(normalize(industry)));
+        return moduleReuse ? 25 : 0;
+    }
+
+    /**
+     * Module reusable_for_industries tags use varied conventions (hyphens,
+     * underscores, free-text phrases) compared to the site's curated
+     * Title Case industry values. Strict normalized equality — lowercase,
+     * alphanumeric only — avoids false positives from loose substring
+     * matching (e.g. "restaurants" must not match "Restaurant").
+     */
+    private String normalize(String value) {
+        return value == null ? "" : value.toLowerCase().replaceAll("[^a-z0-9]", "");
     }
 
     private int scoreBuildType(Foundation f, String buildType) {
@@ -130,6 +154,10 @@ public class RecommendationEngine {
         } else if (industryScore == 50) {
             reasons.add(messageSource.getMessage(
                 "reason.industry.related",
+                new Object[]{f.getName()}, locale));
+        } else if (industryScore == 25) {
+            reasons.add(messageSource.getMessage(
+                "reason.industry.moduleMatch",
                 new Object[]{f.getName()}, locale));
         }
 

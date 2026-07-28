@@ -59,6 +59,8 @@ class RecommendationEngineTest {
                 .features(List.of("Authentication", "Roles", "Payments",
                 		"Inventory", "Reports", "Dashboard", "Invoices",
                 		"API", "Notifications"))
+                // Real subset from CommerceSystem-API/modules-export.json
+                .moduleIndustries(List.of("pharmacy", "hardware-stores", "wholesale"))
                 .active(true)
                 .build(),
             FoundationEntity.builder()
@@ -81,8 +83,10 @@ class RecommendationEngineTest {
                 .buildTypes(List.of("Internal System", "Customer Portal", "Dashboard"))
                 .problems(List.of("Manual spreadsheets", "No reporting", "Duplicate work",
                 		"No dashboard", "WhatsApp chaos"))
-                .features(List.of("Authentication", "Roles", "Dashboard", "Reports", 
+                .features(List.of("Authentication", "Roles", "Dashboard", "Reports",
                 		"AI", "API", "Notifications", "Mobile"))
+                // Real subset from InsurancePortal/modules-export.json
+                .moduleIndustries(List.of("legal", "travel", "wealth-management"))
                 .active(true)
                 .build(),
             FoundationEntity.builder()
@@ -95,6 +99,8 @@ class RecommendationEngineTest {
                 		"No inventory","WhatsApp chaos", "No reporting"))
                 .features(List.of("Authentication", "Roles", "Scheduling", "Payments",
                 		"Inventory", "Notifications", "Reports", "Dashboard", "Mobile"))
+                // Real subset unioned from the 3 Spa repos' modules-export.json
+                .moduleIndustries(List.of("salon_and_beauty", "healthcare_clinics", "warehousing"))
 	            .active(true)
 	            .build(),
 	        FoundationEntity.builder()
@@ -106,6 +112,7 @@ class RecommendationEngineTest {
 	            .problems(List.of("Manual spreadsheets", "No HR", 
         		 "Duplicate work", "No reporting", "No dashboard"))
                 .features(List.of("Authentication","Roles","Reports","Dashboard","API","Notifications","AI","Invoices"))
+                .moduleIndustries(List.of("professional services", "healthcare staffing", "education"))
                 .active(true)
                 .build(),
             FoundationEntity.builder()
@@ -250,6 +257,31 @@ class RecommendationEngineTest {
             "expected the Indonesian feature label in: " + reason);
         assertFalse(reason.contains("is purpose-built"),
             "reason should not fall back to English: " + reason);
+    }
+
+    @Test
+    void moduleIndustryTagAwardsPartialCreditWhenNoCuratedMatch() {
+        // "Pharmacy" isn't CommerceSystem's industry ("Retail") nor one of
+        // its curated relatedIndustries — only a module-level tag. Build
+        // type, problems, and features are deliberately unmatchable by any
+        // foundation so the industry tier is the only differentiator.
+        LeadRequest request = new LeadRequest();
+        request.setName("Test");
+        request.setEmail("test@test.com");
+        request.setIndustry("Pharmacy");
+        request.setBuildType("Something Else");
+        request.setProblems(List.of("Nonexistent problem"));
+        request.setFeatures(List.of("Nonexistent feature"));
+
+        List<ScoringResult> results = engine.recommend(request, Locale.ENGLISH);
+        ScoringResult top = results.get(0);
+
+        assertEquals("commerce-system", top.getFoundation().getSlug());
+        // industry 25 (module match) * 40% = 10; buildType 20 (no match,
+        // non-blank) * 25% = 5; problems/features 0. Total = 15.
+        assertEquals(15, top.getScore());
+        assertTrue(top.getReason().contains("proven, portable module"),
+            "expected the module-match reason fragment in: " + top.getReason());
     }
 
     @Test

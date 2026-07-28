@@ -19,7 +19,7 @@ import java.util.Locale;
 public class LocaleConfig {
 
     @Bean
-    public LocaleResolver localeResolver() {
+    LocaleResolver localeResolver() {
         AcceptHeaderLocaleResolver resolver = new AcceptHeaderLocaleResolver();
         resolver.setDefaultLocale(Locale.ENGLISH);
         resolver.setSupportedLocales(List.of(Locale.ENGLISH, Locale.forLanguageTag("id")));

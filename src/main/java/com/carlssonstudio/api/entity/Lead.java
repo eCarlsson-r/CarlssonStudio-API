@@ -27,6 +27,11 @@ public class Lead {
 
     @Column(length = 25)
     private String phone;
+    
+    @Enumerated(EnumType.STRING)
+    @Column(nullable = false)
+    @Builder.Default
+    private LeadSource source = LeadSource.WEBSITE;
 
     @Column(length = 100)
     private String company;
@@ -37,15 +42,15 @@ public class Lead {
     @Column(nullable = false, length = 50)
     private String industry;
 
-    @Column(name = "build_type", nullable = false, length = 50)
+    @Column(name = "build_type", length = 50)
     private String buildType;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(nullable = false, columnDefinition = "json")
+    @Column(columnDefinition = "json")
     private List<String> problems;
 
     @JdbcTypeCode(SqlTypes.JSON)
-    @Column(nullable = false, columnDefinition = "json")
+    @Column(columnDefinition = "json")
     private List<String> features;
 
     @Enumerated(EnumType.STRING)

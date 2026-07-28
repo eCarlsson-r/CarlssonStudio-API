@@ -11,6 +11,7 @@ public class Foundation {
     private String name;
     private String industry;
     private List<String> relatedIndustries;
+    private List<String> moduleIndustries;
     private List<String> buildTypes;
     private List<String> problems;
     private List<String> features;

@@ -12,6 +12,7 @@ public class DashboardStatsResponse {
     private long leadsThisMonth;
     private Map<String, Long> leadsByStatus;
     private Map<String, Long> leadsByIndustry;
+    private Map<String, Long> leadsBySource;
     private long totalProposals;
     private Map<String, Long> proposalsByStatus;
 }

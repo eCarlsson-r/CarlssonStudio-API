@@ -69,6 +69,26 @@ public class LeadService {
 
         return response;
     }
+    
+    @Transactional
+    public LeadResponse submitQuick(QuickLeadRequest request) {
+        Lead lead = Lead.builder()
+                .name(request.getName())
+                .email(request.getName().toLowerCase()
+                    .replaceAll("\\s+", ".") + "@whatsapp.lead")
+                .industry(request.getIndustry())
+                .source(LeadSource.WHATSAPP_QUICK)
+                .status(LeadStatus.NEW)
+                .build();
+
+        Lead saved = leadRepository.save(lead);
+
+        // Lighter notification — no PDF, no scoring, just alert
+        LeadResponse response = mapToResponse(saved);
+        notificationService.sendQuickLeadNotification(response);
+
+        return response;
+    }
 
     public List<LeadResponse> findAll() {
         return leadRepository.findAll()

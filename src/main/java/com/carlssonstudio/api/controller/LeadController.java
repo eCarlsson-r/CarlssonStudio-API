@@ -70,4 +70,12 @@ public class LeadController {
             ApiResponse.ok("Status updated",
                 leadService.updateStatus(id, status)));
     }
+    
+    @PostMapping("/quick")
+    public ResponseEntity<ApiResponse<LeadResponse>> submitQuick(
+            @Valid @RequestBody QuickLeadRequest request) {
+        LeadResponse response = leadService.submitQuick(request);
+        return ResponseEntity.ok(
+            ApiResponse.ok("Quick submission received", response));
+    }
 }

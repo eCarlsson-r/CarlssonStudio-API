@@ -34,6 +34,8 @@ public class DashboardService {
                     leadRepository.countGroupByStatus()))
                 .leadsByIndustry(toMap(
                     leadRepository.countGroupByIndustry()))
+                .leadsBySource(toMap(
+                        leadRepository.countGroupBySource()))
                 .totalProposals(proposalRepository.count())
                 .proposalsByStatus(toMap(
                     proposalRepository.countGroupByStatus()))

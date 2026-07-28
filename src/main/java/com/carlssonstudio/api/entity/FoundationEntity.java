@@ -46,6 +46,19 @@ public class FoundationEntity {
     @Column(nullable = false, columnDefinition = "json")
     private List<String> features;
 
+    /**
+     * Flattened, deduplicated union of every reusable_for_industries tag
+     * across this foundation's real modules-export.json catalog (see
+     * V6__add_foundation_module_industries.sql). Empty until that
+     * foundation has an export. Used by RecommendationEngine as a weaker
+     * fallback industry signal, distinct from the hand-curated
+     * relatedIndustries above.
+     */
+    @JdbcTypeCode(SqlTypes.JSON)
+    @Column(name = "module_industries", nullable = false, columnDefinition = "json")
+    @Builder.Default
+    private List<String> moduleIndustries = List.of();
+
     @Column(columnDefinition = "TEXT")
     private String description;
 
