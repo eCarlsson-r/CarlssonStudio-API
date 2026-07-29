@@ -7,6 +7,8 @@ CREATE TABLE leads (
     company_size VARCHAR(10),
     industry    VARCHAR(50) NOT NULL,
     build_type  VARCHAR(50) NULL,
+    business_status ENUM('RUNNING', 'PLANNING') NOT NULL,
+    goal        TEXT NULL,
     source ENUM('WEBSITE', 'WHATSAPP_QUICK') NOT NULL DEFAULT 'WEBSITE',
     problems    JSON NULL,
     features    JSON NULL,

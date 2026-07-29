@@ -27,7 +27,7 @@ public class Lead {
 
     @Column(length = 25)
     private String phone;
-    
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
@@ -53,6 +53,13 @@ public class Lead {
     @Column(columnDefinition = "json")
     private List<String> features;
 
+    @Column(nullable = false)
+    @Enumerated(EnumType.STRING)
+    private BusinessStatus businessStatus;
+
+    @Column(columnDefinition = "TEXT")
+    private String goal;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
     @Builder.Default
@@ -64,8 +71,7 @@ public class Lead {
     @Column(name = "updated_at")
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "lead", cascade = CascadeType.ALL,
-               fetch = FetchType.LAZY)
+    @OneToMany(mappedBy = "lead", cascade = CascadeType.ALL, fetch = FetchType.LAZY)
     private List<LeadRecommendation> recommendations;
 
     @PrePersist
