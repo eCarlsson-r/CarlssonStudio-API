@@ -1,5 +1,6 @@
 package com.carlssonstudio.api.dto;
 
+import com.carlssonstudio.api.entity.BusinessStatus;
 import jakarta.validation.constraints.*;
 import lombok.Data;
 import java.util.List;
@@ -30,6 +31,17 @@ public class LeadRequest {
 
     @NotBlank(message = "{lead.buildType.required}")
     private String buildType;
+
+    /**
+     * Whether the business is already operating or still being planned —
+     * the same signal Quick Match captures (see QuickLeadRequest). Left
+     * optional rather than @NotNull so a cached older frontend bundle
+     * degrades to RUNNING (see LeadService#submit) instead of getting a 400.
+     */
+    private BusinessStatus businessStatus;
+
+    /** Free-text objective; only meaningful when businessStatus is PLANNING. */
+    private String goal;
 
     @NotNull(message = "{lead.problems.required}")
     @Size(min = 1, message = "{lead.problems.required}")

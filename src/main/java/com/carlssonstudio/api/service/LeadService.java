@@ -39,6 +39,13 @@ public class LeadService {
                 .buildType(request.getBuildType())
                 .problems(request.getProblems())
                 .features(request.getFeatures())
+                // businessStatus is optional on the wire so an older cached
+                // frontend can't 400; assume an operating business when absent.
+                .businessStatus(request.getBusinessStatus() != null
+                    ? request.getBusinessStatus()
+                    : BusinessStatus.RUNNING)
+                .goal(request.getGoal())
+                .source(LeadSource.WEBSITE)
                 .status(LeadStatus.NEW)
                 .build();
 
@@ -77,6 +84,10 @@ public class LeadService {
                 .email(request.getName().toLowerCase()
                     .replaceAll("\\s+", ".") + "@whatsapp.lead")
                 .industry(request.getIndustry())
+                // Was previously dropped here, which violated the NOT NULL
+                // business_status constraint and silently lost every quick lead.
+                .businessStatus(request.getBusinessStatus())
+                .goal(request.getGoal())
                 .source(LeadSource.WHATSAPP_QUICK)
                 .status(LeadStatus.NEW)
                 .build();
@@ -139,6 +150,10 @@ public class LeadService {
                 .buildType(lead.getBuildType())
                 .problems(lead.getProblems())
                 .features(lead.getFeatures())
+                .businessStatus(lead.getBusinessStatus() == null
+                    ? null : lead.getBusinessStatus().name())
+                .goal(lead.getGoal())
+                .source(lead.getSource() == null ? null : lead.getSource().name())
                 .status(lead.getStatus().name())
                 .createdAt(lead.getCreatedAt())
                 .recommendations(recs)

@@ -53,9 +53,16 @@ public class Lead {
     @Column(columnDefinition = "json")
     private List<String> features;
 
+    /**
+     * business_status is NOT NULL in the schema with no DB default, so a
+     * builder that forgets it fails the insert and loses the lead. Both
+     * submit paths set this explicitly; the default here is a safety net so
+     * a future caller can never drop a lead over a missing enum.
+     */
     @Column(nullable = false)
     @Enumerated(EnumType.STRING)
-    private BusinessStatus businessStatus;
+    @Builder.Default
+    private BusinessStatus businessStatus = BusinessStatus.RUNNING;
 
     @Column(columnDefinition = "TEXT")
     private String goal;
