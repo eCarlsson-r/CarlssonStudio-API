@@ -27,4 +27,5 @@ public class LeadResponse {
     private String status;
     private LocalDateTime createdAt;
     private List<RecommendationResponse> recommendations;
+    private OperationalAssessmentResponse operationalAssessment;
 }
